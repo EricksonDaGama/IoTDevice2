@@ -7,13 +7,13 @@ import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class DeviceStorage {
+public class DeviceManager {
     private Map<String, Device> devices;
     private File devicesFile;
     private Lock wLock;
     private Lock rLock;
 
-    public DeviceStorage(String deviceFilePath) {
+    public DeviceManager(String deviceFilePath) {
         devices = new HashMap<>();
         devicesFile = new File(deviceFilePath);
 

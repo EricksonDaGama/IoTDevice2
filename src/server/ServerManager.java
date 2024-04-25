@@ -9,8 +9,8 @@ import java.util.Map;
 public class ServerManager {
     private static volatile ServerManager instance;
 
-    private DomainStorage domStorage;
-    private DeviceStorage devStorage;
+    private DomainManager domStorage;
+    private DeviceManager devStorage;
     private UserStorage userStorage;
 
     private static final String baseDir = "./output/server/";
@@ -22,8 +22,8 @@ public class ServerManager {
     private static final String temperatureDirectoryPath = baseDir + "temp/";
 
     private ServerManager(){
-        domStorage = new DomainStorage(domainFilePath);
-        devStorage = new DeviceStorage(deviceFilePath);
+        domStorage = new DomainManager(domainFilePath);
+        devStorage = new DeviceManager(deviceFilePath);
         userStorage = new UserStorage(userFilePath);
 
         new File(imageDirectoryPath).mkdirs();
