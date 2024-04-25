@@ -1,9 +1,9 @@
-package src.client;
+package src.others;
 
 /**
  * Represents messages to be sent between server and client.
  */
-public enum MessageCode {
+public enum CodeMessage {
     WRONG_PWD("WRONG_PWD # Wrong password. Try again."),
     OK_NEW_USER("OK_NEW_USER # This user isn't registered."),
     OK_USER("OK_USER # User exists."),
@@ -38,7 +38,7 @@ public enum MessageCode {
 
     private String desc;
 
-    MessageCode(String desc) {
+    CodeMessage(String desc) {
         this.desc = desc;
     }
 

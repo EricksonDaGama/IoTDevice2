@@ -1,6 +1,7 @@
 package src.client;
 
 import src.others.FileHelper;
+import src.others.CodeMessage;
 import src.others.Utils;
 
 import javax.net.ssl.SSLSocket;
@@ -99,28 +100,28 @@ public class IoTDevice {
     private static void remoteAttestation(String deviceID) {
         try {
             System.out.println("Starting remote attestation.");
-            out.writeObject(MessageCode.AD);
+            out.writeObject(CodeMessage.AD);
             out.writeObject(deviceID);
 
-            MessageCode code = (MessageCode) in.readObject();
+            CodeMessage code = (CodeMessage) in.readObject();
             switch (code) {
                 case NOK_DEVID:
-                    System.out.println(MessageCode.NOK_DEVID.getDesc());
+                    System.out.println(CodeMessage.NOK_DEVID.getDesc());
                     System.exit(-1); // Connection is shut down by the shutdown hook.
                     break;
                 case OK_DEVID:
-                    System.out.println(MessageCode.OK_DEVID.getDesc());
-                    out.writeObject(MessageCode.TD);
+                    System.out.println(CodeMessage.OK_DEVID.getDesc());
+                    out.writeObject(CodeMessage.TD);
                     long nonce = in.readLong();
                     sendAttestationHash(nonce);
-                    MessageCode attestCode = (MessageCode) in.readObject();
+                    CodeMessage attestCode = (CodeMessage) in.readObject();
                     switch (attestCode) {
                         case NOK_TESTED:
-                            System.out.println(MessageCode.NOK_TESTED.getDesc());
+                            System.out.println(CodeMessage.NOK_TESTED.getDesc());
                             System.exit(-1);
                             break;
                         case OK_TESTED:
-                            System.out.println(MessageCode.OK_TESTED.getDesc());
+                            System.out.println(CodeMessage.OK_TESTED.getDesc());
                             break;
                         default:
                             break;
@@ -177,7 +178,7 @@ public class IoTDevice {
             do {
                 // FACTOR 1 - Auth based on asymmetric encryption
                 System.out.println("Starting authentication.");
-                out.writeObject(MessageCode.AU);
+                out.writeObject(CodeMessage.AU);
                 // Send user id
                 out.writeObject(user);
                 // Receive nonce from server
@@ -206,10 +207,10 @@ public class IoTDevice {
                 privKey = (PrivateKey) kstore.getKey(user, psw_keystore.toCharArray());
 
                 // MessageCode used as flag
-                MessageCode code = (MessageCode) in.readObject();
+                CodeMessage code = (CodeMessage) in.readObject();
                 switch (code) {
                     case OK_NEW_USER:
-                        System.out.println(MessageCode.OK_NEW_USER.getDesc());
+                        System.out.println(CodeMessage.OK_NEW_USER.getDesc());
                         // Send nonce
                         out.writeLong(nonce);
                         // Send nonce signed with private key
@@ -221,23 +222,23 @@ public class IoTDevice {
 
                         // Receive confirmation
                         // TODO handle receiving WRONG_NONCE
-                        if (!in.readObject().equals(MessageCode.OK)) {
+                        if (!in.readObject().equals(CodeMessage.OK)) {
                             System.out.println("enviei certificado e recebi NÃO OK");
                             System.exit(-1);
                         }
-                        System.out.println(MessageCode.OK.getDesc());
+                        System.out.println(CodeMessage.OK.getDesc());
                         break;
 
                     case OK_USER:
-                        System.out.println(MessageCode.OK_USER.getDesc());
+                        System.out.println(CodeMessage.OK_USER.getDesc());
                         // Send nonce signed with private key
                         sendSignedNonce(user, nonce, privKey);
 
                         // Receive confirmation
-                        if (!in.readObject().equals(MessageCode.OK)) {
+                        if (!in.readObject().equals(CodeMessage.OK)) {
                             System.exit(-1);
                         }
-                        System.out.println(MessageCode.OK.getDesc());
+                        System.out.println(CodeMessage.OK.getDesc());
                         break;
                     default:
                         System.out.println("Read incorrect code from server.");
@@ -247,7 +248,7 @@ public class IoTDevice {
 
 
                 // FACTOR 2 - Email auth
-                MessageCode emailCode;
+                CodeMessage emailCode;
                 do {
                     System.out.println("Check your email for an authentication code.");
                     System.out.print("> Code: ");
@@ -255,8 +256,8 @@ public class IoTDevice {
                     out.writeInt(Integer.valueOf(c2fa));
                     out.flush();
                     // receive code
-                    emailCode = (MessageCode) in.readObject();
-                } while (emailCode.equals(MessageCode.EMAIL_FAIL));
+                    emailCode = (CodeMessage) in.readObject();
+                } while (emailCode.equals(CodeMessage.EMAIL_FAIL));
 
                 switch (emailCode) {
                     case OK:
@@ -311,7 +312,7 @@ public class IoTDevice {
             System.out.println("\nShutting down.\n");
             try {
                 if (out != null) {
-                    out.writeObject(MessageCode.STOP);
+                    out.writeObject(CodeMessage.STOP);
                 }
 
                 // Close socket
@@ -404,12 +405,12 @@ public class IoTDevice {
      */
     private static void receiveImage(String device) {
         try {
-            out.writeObject(MessageCode.RI); // Send opcode
+            out.writeObject(CodeMessage.RI); // Send opcode
             String[] dev = device.split(":");
             out.writeObject(dev[0]);
             out.writeObject(dev[1]);
             // Receive message
-            MessageCode code = (MessageCode) in.readObject();
+            CodeMessage code = (CodeMessage) in.readObject();
             switch (code) {
                 case OK:
                     String s = (String) in.readObject(); // This is discarded
@@ -418,16 +419,16 @@ public class IoTDevice {
                     // String[] dev = device.split(":");
                     String fileName = "Img_" + dev[0] + "_" + dev[1] + ".jpg";
                     FileHelper.receiveFile(fileSize, fileName, in);
-                    System.out.println(MessageCode.OK.getDesc() + ", " + fileSize + " (long)"); // TODO
+                    System.out.println(CodeMessage.OK.getDesc() + ", " + fileSize + " (long)"); // TODO
                     break;
                 case NODATA:
-                    System.out.println(MessageCode.NODATA.getDesc());
+                    System.out.println(CodeMessage.NODATA.getDesc());
                     break;
                 case NOPERM:
-                    System.out.println(MessageCode.NOPERM.getDesc());
+                    System.out.println(CodeMessage.NOPERM.getDesc());
                     break;
                 case NOID:
-                    System.out.println(MessageCode.NOID.getDesc());
+                    System.out.println(CodeMessage.NOID.getDesc());
                     break;
                 default:
                     break;
@@ -440,10 +441,10 @@ public class IoTDevice {
 
     private static void receiveTemps(String domain) {
         try {
-            out.writeObject(MessageCode.RT); // Send opcode
+            out.writeObject(CodeMessage.RT); // Send opcode
             out.writeObject(domain);
             // Receive message
-            MessageCode code = (MessageCode) in.readObject();
+            CodeMessage code = (CodeMessage) in.readObject();
             switch (code) {
                 case OK:
                     // Long fileSize = (long) in.readObject(); // Read file size
@@ -468,16 +469,16 @@ public class IoTDevice {
                         output.flush();
                     }
                     // FileHelper.receiveFile(fileSize, fileName,in);
-                    System.out.println(MessageCode.OK.getDesc() + ", " + f.length() + " (long)");
+                    System.out.println(CodeMessage.OK.getDesc() + ", " + f.length() + " (long)");
                     break;
                 case NODATA:
-                    System.out.println(MessageCode.NODATA.getDesc());
+                    System.out.println(CodeMessage.NODATA.getDesc());
                     break;
                 case NODM:
-                    System.out.println(MessageCode.NODM.getDesc());
+                    System.out.println(CodeMessage.NODM.getDesc());
                     break;
                 case NOPERM:
-                    System.out.println(MessageCode.NOPERM.getDesc());
+                    System.out.println(CodeMessage.NOPERM.getDesc());
                     break;
                 default:
                     break;
@@ -490,16 +491,16 @@ public class IoTDevice {
 
     private static void sendImage(String imagePath) {
         try {
-            out.writeObject(MessageCode.EI); // Send opcode
+            out.writeObject(CodeMessage.EI); // Send opcode
             FileHelper.sendFile((imagePath), out);
             // Receive message
-            MessageCode code = (MessageCode) in.readObject();
+            CodeMessage code = (CodeMessage) in.readObject();
             switch (code) {
                 case OK:
-                    System.out.println(MessageCode.OK.getDesc());
+                    System.out.println(CodeMessage.OK.getDesc());
                     break;
                 case NOK:
-                    System.out.println(MessageCode.NOK.getDesc());
+                    System.out.println(CodeMessage.NOK.getDesc());
                     break;
                 default:
                     break;
@@ -517,16 +518,16 @@ public class IoTDevice {
      */
     private static void sendTemperature(String temp) { // Should it test if the value can be converted to a float?
         try {
-            out.writeObject(MessageCode.ET); // Send opcode
+            out.writeObject(CodeMessage.ET); // Send opcode
             out.writeObject(temp); // Send user
             // Receive message
-            MessageCode code = (MessageCode) in.readObject();
+            CodeMessage code = (CodeMessage) in.readObject();
             switch (code) {
                 case OK:
-                    System.out.println(MessageCode.OK.getDesc());
+                    System.out.println(CodeMessage.OK.getDesc());
                     break;
                 case NOK:
-                    System.out.println(MessageCode.NOK.getDesc());
+                    System.out.println(CodeMessage.NOK.getDesc());
                     break;
                 default:
                     break;
@@ -539,22 +540,22 @@ public class IoTDevice {
 
     private static void registerDevice(String domain) {
         try {
-            out.writeObject(MessageCode.RD); // Send opcode
+            out.writeObject(CodeMessage.RD); // Send opcode
             out.writeObject(domain); // Send domain
             // Receive message
-            MessageCode code = (MessageCode) in.readObject();
+            CodeMessage code = (CodeMessage) in.readObject();
             switch (code) {
                 case OK:
-                    System.out.println(MessageCode.OK.getDesc());
+                    System.out.println(CodeMessage.OK.getDesc());
                     break;
                 case NOPERM:
-                    System.out.println(MessageCode.NOPERM.getDesc());
+                    System.out.println(CodeMessage.NOPERM.getDesc());
                     break;
                 case NODM:
-                    System.out.println(MessageCode.NODM.getDesc());
+                    System.out.println(CodeMessage.NODM.getDesc());
                     break;
                 case DEVICEEXISTS:
-                    System.out.println(MessageCode.DEVICEEXISTS.getDesc());
+                    System.out.println(CodeMessage.DEVICEEXISTS.getDesc());
                 default:
                     break;
             }
@@ -572,26 +573,26 @@ public class IoTDevice {
      */
     private static void addUser(String user, String domain) {
         try {
-            out.writeObject(MessageCode.ADD); // Send opcode
+            out.writeObject(CodeMessage.ADD); // Send opcode
             out.writeObject(user); // Send user
             out.writeObject(domain); // Send domain
             // Receive message
-            MessageCode code = (MessageCode) in.readObject();
+            CodeMessage code = (CodeMessage) in.readObject();
             switch (code) {
                 case OK:
-                    System.out.println(MessageCode.OK.getDesc());
+                    System.out.println(CodeMessage.OK.getDesc());
                     break;
                 case NOPERM:
-                    System.out.println(MessageCode.NOPERM.getDesc());
+                    System.out.println(CodeMessage.NOPERM.getDesc());
                     break;
                 case NODM:
-                    System.out.println(MessageCode.NODM.getDesc());
+                    System.out.println(CodeMessage.NODM.getDesc());
                     break;
                 case NOUSER:
-                    System.out.println(MessageCode.NOUSER.getDesc());
+                    System.out.println(CodeMessage.NOUSER.getDesc());
                     break;
                 case USEREXISTS:
-                    System.out.println(MessageCode.USEREXISTS.getDesc());
+                    System.out.println(CodeMessage.USEREXISTS.getDesc());
                 default:
                     break;
             }
@@ -608,16 +609,16 @@ public class IoTDevice {
      */
     private static void createDomain(String dmName) {
         try {
-            out.writeObject(MessageCode.CREATE); // Send opcode
+            out.writeObject(CodeMessage.CREATE); // Send opcode
             out.writeObject(dmName); // Send domain
             // Receive message
-            MessageCode code = (MessageCode) in.readObject();
+            CodeMessage code = (CodeMessage) in.readObject();
             switch (code) {
                 case NOK:
-                    System.out.println(MessageCode.NOK.getDesc());
+                    System.out.println(CodeMessage.NOK.getDesc());
                     break;
                 case OK:
-                    System.out.println(MessageCode.OK.getDesc());
+                    System.out.println(CodeMessage.OK.getDesc());
                     break;
                 default:
                     break;
@@ -636,7 +637,7 @@ public class IoTDevice {
         try {
             File iotFile = new File(deviceJar);
             // Send Test Device message
-            out.writeObject(MessageCode.TD);
+            out.writeObject(CodeMessage.TD);
             // Send IoTDevice file name
             out.writeObject(iotFile.getName());
             // Send IoTDevice file size
@@ -646,14 +647,14 @@ public class IoTDevice {
             // Receive message
             System.out.println(iotFile.getName() + ": " + iotFile.length());
             out.flush();
-            MessageCode code = (MessageCode) in.readObject();
+            CodeMessage code = (CodeMessage) in.readObject();
             switch (code) {
                 case NOK_TESTED:
-                    System.out.println(MessageCode.NOK_TESTED.getDesc());
+                    System.out.println(CodeMessage.NOK_TESTED.getDesc());
                     System.exit(-1);
                     break;
                 case OK_TESTED:
-                    System.out.println(MessageCode.OK_TESTED.getDesc());
+                    System.out.println(CodeMessage.OK_TESTED.getDesc());
                     break;
                 default:
                     break;

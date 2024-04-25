@@ -2,7 +2,7 @@ package src.server;
 
 import src.others.FileHelper;
 import src.others.Utils;
-import src.client.MessageCode;
+import src.others.CodeMessage;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -42,7 +42,7 @@ public class ServerThread extends Thread {
             manager = ServerManager.getInstance();
 
             while (isRunning) {
-                MessageCode opcode = (MessageCode) in.readObject();
+                CodeMessage opcode = (CodeMessage) in.readObject();
                 switch (opcode) {
                     case AU:
                         authUser();
@@ -119,10 +119,10 @@ public class ServerThread extends Thread {
         out.writeLong(nonce);
 
         if (sa.isUserRegistered(userID)) {
-            out.writeObject(MessageCode.OK_USER);
+            out.writeObject(CodeMessage.OK_USER);
             authRegisteredUser(nonce); //certificado
         } else {
-            out.writeObject(MessageCode.OK_NEW_USER);
+            out.writeObject(CodeMessage.OK_NEW_USER);
             authUnregisteredUser(nonce); //certificado
         }
 
@@ -142,16 +142,16 @@ public class ServerThread extends Thread {
         int receivedTwoFACode = in.readInt();
 
         if (twoFACode == receivedTwoFACode) {
-            out.writeObject(MessageCode.OK);
+            out.writeObject(CodeMessage.OK);
         } else {
-            out.writeObject(MessageCode.NOK);
+            out.writeObject(CodeMessage.NOK);
         }
     }
 
     private void authDevice() throws IOException, ClassNotFoundException {
         String deviceID = (String) in.readObject();
-        MessageCode res = manager.authenticateDevice(userID, deviceID).responseCode();
-        if (res == MessageCode.OK_DEVID) {
+        CodeMessage res = manager.authenticateDevice(userID, deviceID).responseCode();
+        if (res == CodeMessage.OK_DEVID) {
             this.deviceID = deviceID;
         }
         out.writeObject(res);
@@ -165,29 +165,29 @@ public class ServerThread extends Thread {
 
         byte[] receivedHash = (byte[]) in.readObject();
         if (ServerAuth.verifyAttestationHash(receivedHash, nonce)) {
-            out.writeObject(MessageCode.OK_TESTED);
+            out.writeObject(CodeMessage.OK_TESTED);
         } else {
             manager.disconnectDevice(userID, deviceID);
-            out.writeObject(MessageCode.NOK_TESTED);
+            out.writeObject(CodeMessage.NOK_TESTED);
         }
     }
 
     private void createDomain() throws IOException, ClassNotFoundException {
         String domain = (String) in.readObject();
-        MessageCode res = manager.createDomain(userID, domain).responseCode();
+        CodeMessage res = manager.createDomain(userID, domain).responseCode();
         out.writeObject(res);
     }
 
     private void addUserToDomain() throws IOException, ClassNotFoundException {
         String newUser = (String) in.readObject();
         String domain = (String) in.readObject();
-        MessageCode res = manager.addUserToDomain(userID, newUser, domain).responseCode();
+        CodeMessage res = manager.addUserToDomain(userID, newUser, domain).responseCode();
         out.writeObject(res);
     }
 
     private void registerDeviceInDomain() throws IOException, ClassNotFoundException {
         String domain = (String) in.readObject();
-        MessageCode res = manager.registerDeviceInDomain(domain, this.userID, this.deviceID).responseCode();
+        CodeMessage res = manager.registerDeviceInDomain(domain, this.userID, this.deviceID).responseCode();
         out.writeObject(res);
     }
 
@@ -197,12 +197,12 @@ public class ServerThread extends Thread {
         try {
             temperature = Float.parseFloat(tempStr);
         } catch (NumberFormatException e) {
-            out.writeObject(new ServerResponse(MessageCode.NOK));
+            out.writeObject(new ServerResponse(CodeMessage.NOK));
             out.flush();
             return;
         }
 
-        MessageCode res = manager
+        CodeMessage res = manager
                 .registerTemperature(temperature, this.userID, this.deviceID)
                 .responseCode();
         out.writeObject(res);
@@ -216,7 +216,7 @@ public class ServerThread extends Thread {
 
         FileHelper.receiveFile(fileSize, fullImgPath, in);
 
-        MessageCode res = manager
+        CodeMessage res = manager
                 .registerImage(filename, this.userID, this.deviceID)
                 .responseCode();
         out.writeObject(res);
@@ -225,9 +225,9 @@ public class ServerThread extends Thread {
     private void getTemperatures() throws IOException, ClassNotFoundException {
         String domain = (String) in.readObject();
         ServerResponse sResponse = manager.getTemperatures(this.userID, domain);
-        MessageCode res = sResponse.responseCode();
+        CodeMessage res = sResponse.responseCode();
         out.writeObject(res);
-        if (res == MessageCode.OK) {
+        if (res == CodeMessage.OK) {
             // FileHelper.sendFile(sResponse.filePath(),out);
             out.writeObject(sResponse.temperatures());
         }
@@ -237,11 +237,11 @@ public class ServerThread extends Thread {
         String targetUser = (String) in.readObject();
         String targetDev = (String) in.readObject();
         ServerResponse sr = manager.getImage(this.userID, targetUser, targetDev);
-        MessageCode rCode = sr.responseCode();
+        CodeMessage rCode = sr.responseCode();
         // Send code to client
         out.writeObject(rCode);
         // Send file (if aplicable)
-        if (rCode == MessageCode.OK) {
+        if (rCode == CodeMessage.OK) {
             FileHelper.sendFile(sr.filePath(), out);
         }
     }
@@ -259,9 +259,9 @@ public class ServerThread extends Thread {
                 receivedUnsignedNonce == nonce) {
             sa.registerUser(userID, Utils.certPathFromUser(userID));
             sa.saveCertificateInFile(userID, cert);
-            out.writeObject(MessageCode.OK);
+            out.writeObject(CodeMessage.OK);
         } else {
-            out.writeObject(MessageCode.WRONG_NONCE);
+            out.writeObject(CodeMessage.WRONG_NONCE);
         }
     }
 
@@ -272,9 +272,9 @@ public class ServerThread extends Thread {
 
         byte[] signedNonce = (byte[]) in.readObject();
         if (sa.verifySignedNonce(signedNonce, userID, nonce)) {
-            out.writeObject(MessageCode.OK);
+            out.writeObject(CodeMessage.OK);
         } else {
-            out.writeObject(MessageCode.WRONG_NONCE);
+            out.writeObject(CodeMessage.WRONG_NONCE);
         }
     }
 }

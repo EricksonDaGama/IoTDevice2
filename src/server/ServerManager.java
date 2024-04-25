@@ -1,7 +1,7 @@
 package src.server;
 
 import src.others.Utils;
-import src.client.MessageCode;
+import src.others.CodeMessage;
 
 import java.io.File;
 import java.io.IOException;
@@ -65,11 +65,11 @@ public class ServerManager {
         domStorage.writeLock();
         try {
             if (domStorage.domainExists(domainName)) {
-                return new ServerResponse(MessageCode.NOK);
+                return new ServerResponse(CodeMessage.NOK);
             }
 
             domStorage.addDomain(domainName, ownerUID);
-            return new ServerResponse(MessageCode.OK);
+            return new ServerResponse(CodeMessage.OK);
         } finally {
             domStorage.writeUnlock();
         }
@@ -81,23 +81,23 @@ public class ServerManager {
         userStorage.readLock();
         try {
             if (!domStorage.domainExists(domainName)) {
-                return new ServerResponse(MessageCode.NODM);
+                return new ServerResponse(CodeMessage.NODM);
             }
 
             if (!userStorage.isUserRegistered(newUserID)) {
-                return new ServerResponse(MessageCode.NOUSER);
+                return new ServerResponse(CodeMessage.NOUSER);
             }
 
             if (!domStorage.isOwnerOfDomain(requesterUID, domainName)) {
-                return new ServerResponse(MessageCode.NOPERM);
+                return new ServerResponse(CodeMessage.NOPERM);
             }
 
             boolean ret = domStorage
                 .addUserToDomain(requesterUID, newUserID, domainName);
             if (ret) {
-                return new ServerResponse(MessageCode.OK);
+                return new ServerResponse(CodeMessage.OK);
             } else {
-                return new ServerResponse(MessageCode.USEREXISTS);
+                return new ServerResponse(CodeMessage.USEREXISTS);
             }
         } finally {
             userStorage.readUnlock();
@@ -112,21 +112,21 @@ public class ServerManager {
         devStorage.writeLock();
         try {
             if (!domStorage.domainExists(domainName)) {
-                return new ServerResponse(MessageCode.NODM);
+                return new ServerResponse(CodeMessage.NODM);
             }
 
             if (!domStorage.isUserRegisteredInDomain(userId, domainName)) {
-                return new ServerResponse(MessageCode.NOPERM);
+                return new ServerResponse(CodeMessage.NOPERM);
             }
 
             if (domStorage.isDeviceRegisteredInDomain(userId, devId,
                     domainName)) {
-                return new ServerResponse(MessageCode.DEVICEEXISTS);
+                return new ServerResponse(CodeMessage.DEVICEEXISTS);
             }
 
             domStorage.addDeviceToDomain(userId, devId, domainName);
             devStorage.addDomainToDevice(userId, devId, domainName);
-            return new ServerResponse(MessageCode.OK);
+            return new ServerResponse(CodeMessage.OK);
         } finally {
             devStorage.writeUnlock();
             domStorage.writeUnlock();
@@ -139,7 +139,7 @@ public class ServerManager {
         devStorage.writeLock();
         try {
             devStorage.saveDeviceTemperature(userId, devId, temperature);
-            return new ServerResponse(MessageCode.OK);
+            return new ServerResponse(CodeMessage.OK);
         } finally {
             devStorage.writeUnlock();
         }
@@ -150,7 +150,7 @@ public class ServerManager {
         devStorage.writeLock();
         try {
             devStorage.saveDeviceImage(userId, devId, filename);
-            return new ServerResponse(MessageCode.OK);
+            return new ServerResponse(CodeMessage.OK);
         } finally {
             devStorage.writeUnlock();
         }
@@ -162,18 +162,18 @@ public class ServerManager {
         devStorage.readLock();
         try {
             if (!domStorage.domainExists(domainName)) {
-                return new ServerResponse(MessageCode.NODM);
+                return new ServerResponse(CodeMessage.NODM);
             }
 
             if (!domStorage.isUserRegisteredInDomain(user, domainName)) {
-                return new ServerResponse(MessageCode.NOPERM);
+                return new ServerResponse(CodeMessage.NOPERM);
             }
 
             Map<String, Float> temps = domStorage.temperatures(domainName,
                     devStorage);
 
             //XXX ServerResponse is being init with a Map?
-            return new ServerResponse(MessageCode.OK, temps);
+            return new ServerResponse(CodeMessage.OK, temps);
         } finally {
             devStorage.readUnlock();
             domStorage.readUnlock();
@@ -186,20 +186,20 @@ public class ServerManager {
         devStorage.readLock();
         try {
             if (!devStorage.deviceExists(targetUID, targetDID)) {
-                return new ServerResponse(MessageCode.NOID);
+                return new ServerResponse(CodeMessage.NOID);
             }
 
             String filepath = devStorage.getDeviceImage(targetUID, targetDID);
             if (filepath == null) {
-                return new ServerResponse(MessageCode.NODATA);
+                return new ServerResponse(CodeMessage.NODATA);
             }
 
             if (domStorage.hasAccessToDevice(requesterUID, targetUID,
                     targetDID)) {
-                return new ServerResponse(MessageCode.OK, filepath);
+                return new ServerResponse(CodeMessage.OK, filepath);
             }
 
-            return new ServerResponse(MessageCode.NOPERM);
+            return new ServerResponse(CodeMessage.NOPERM);
         } finally {
             devStorage.readUnlock();
             domStorage.readUnlock();
@@ -215,7 +215,7 @@ public class ServerManager {
         userStorage.readLock();
         try {
             if (userStorage.isUserRegistered(user)) {
-                return new ServerResponse(MessageCode.OK_USER);
+                return new ServerResponse(CodeMessage.OK_USER);
             }
         } finally {
             userStorage.readUnlock();
@@ -224,7 +224,7 @@ public class ServerManager {
         userStorage.writeLock();
         try {
             userStorage.registerUser(user, "");
-            return new ServerResponse(MessageCode.OK_NEW_USER);
+            return new ServerResponse(CodeMessage.OK_NEW_USER);
         } finally {
             userStorage.writeUnlock();
         }
@@ -249,15 +249,15 @@ public class ServerManager {
 
                 if (devStorage.isDeviceOnline(userId, devId)) {
                     System.out.println("dev is online");
-                    return new ServerResponse(MessageCode.NOK_DEVID);
+                    return new ServerResponse(CodeMessage.NOK_DEVID);
                 } else {
                     devStorage.activateDevice(userId, devId);
-                    return new ServerResponse(MessageCode.OK_DEVID);
+                    return new ServerResponse(CodeMessage.OK_DEVID);
                 }
             }
 
             devStorage.addDevice(userId, devId);
-            return new ServerResponse(MessageCode.OK_DEVID);
+            return new ServerResponse(CodeMessage.OK_DEVID);
         } finally {
             devStorage.writeUnlock();
         }
