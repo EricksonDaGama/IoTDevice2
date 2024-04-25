@@ -1,11 +1,8 @@
 package src.server;
 
-import src.others.FileHelper;
 import src.others.CodeMessage;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.net.Socket;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -213,13 +210,45 @@ public class ServerThread extends Thread {
         long fileSize = (long) in.readObject();
         String fullImgPath = IMAGE_DIR_PATH + filename;
 
-        FileHelper.receiveFile(fileSize, fullImgPath, in);
+        receiveFile(fileSize, fullImgPath, in);
 
         CodeMessage res = manager
                 .registerImage(filename, this.userID, this.deviceID)
                 .responseCode();
         out.writeObject(res);
     }
+
+
+
+
+    public static void receiveFile(Long fileSize, String path, ObjectInputStream in) {
+        try {
+            File f = new File(path);
+            f.createNewFile();
+
+            FileOutputStream fout = new FileOutputStream(f);
+            OutputStream output = new BufferedOutputStream(fout);
+
+            int bytesWritten = 0;
+            byte[] buffer = new byte[1024];
+
+            while (fileSize > bytesWritten) {
+                int bytesRead = in.read(buffer, 0, 1024);
+                output.write(buffer, 0, bytesRead);
+                output.flush();
+                fout.flush();
+                bytesWritten += bytesRead;
+                System.out.println(bytesWritten);
+            }
+            output.close();
+            fout.close();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
+
 
     private void getTemperatures() throws IOException, ClassNotFoundException {
         String domain = (String) in.readObject();
@@ -241,7 +270,36 @@ public class ServerThread extends Thread {
         out.writeObject(rCode);
         // Send file (if aplicable)
         if (rCode == CodeMessage.OK) {
-            FileHelper.sendFile(sr.filePath(), out);
+            sendFile(sr.filePath(), out);
+        }
+    }
+
+
+    public static void sendFile(String path,ObjectOutputStream out) {
+        File f = new File(path);
+        long fileSize = f.length();
+        try {
+            // Send file name
+            out.writeObject(f.getName());
+            // Send file size
+            out.writeObject(fileSize);
+
+            FileInputStream fin = new FileInputStream(f);
+            InputStream input = new BufferedInputStream(fin);
+            // Send file
+            int bytesSent = 0;
+            byte[] buffer = new byte[1024];
+            while (fileSize > bytesSent) {
+                int bytesRead = input.read(buffer, 0, 1024);
+                bytesSent += bytesRead;
+                out.write(buffer, 0, bytesRead);
+                out.flush();
+            }
+            input.close();
+            fin.close();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
     }
 

@@ -1,6 +1,5 @@
 package src.client;
 
-import src.others.FileHelper;
 import src.others.CodeMessage;
 
 import javax.net.ssl.SSLSocket;
@@ -424,7 +423,7 @@ public class IoTDevice {
                     System.out.println("FIle size:" + fileSize);
                     // String[] dev = device.split(":");
                     String fileName = "Img_" + dev[0] + "_" + dev[1] + ".jpg";
-                    FileHelper.receiveFile(fileSize, fileName, in);
+                    receiveFile(fileSize, fileName, in);
                     System.out.println(CodeMessage.OK.getDesc() + ", " + fileSize + " (long)"); // TODO
                     break;
                 case NODATA:
@@ -440,6 +439,35 @@ public class IoTDevice {
                     break;
             }
         } catch (IOException | ClassNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
+
+
+    public static void receiveFile(Long fileSize, String path, ObjectInputStream in) {
+        try {
+            File f = new File(path);
+            f.createNewFile();
+
+            FileOutputStream fout = new FileOutputStream(f);
+            OutputStream output = new BufferedOutputStream(fout);
+
+            int bytesWritten = 0;
+            byte[] buffer = new byte[1024];
+
+            while (fileSize > bytesWritten) {
+                int bytesRead = in.read(buffer, 0, 1024);
+                output.write(buffer, 0, bytesRead);
+                output.flush();
+                fout.flush();
+                bytesWritten += bytesRead;
+                System.out.println(bytesWritten);
+            }
+            output.close();
+            fout.close();
+        } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
@@ -498,7 +526,7 @@ public class IoTDevice {
     private static void sendImage(String imagePath) {
         try {
             out.writeObject(CodeMessage.EI); // Send opcode
-            FileHelper.sendFile((imagePath), out);
+            sendFile((imagePath), out);
             // Receive message
             CodeMessage code = (CodeMessage) in.readObject();
             switch (code) {
@@ -516,6 +544,37 @@ public class IoTDevice {
             e.printStackTrace();
         }
     }
+
+
+
+    public static void sendFile(String path,ObjectOutputStream out) {
+        File f = new File(path);
+        long fileSize = f.length();
+        try {
+            // Send file name
+            out.writeObject(f.getName());
+            // Send file size
+            out.writeObject(fileSize);
+
+            FileInputStream fin = new FileInputStream(f);
+            InputStream input = new BufferedInputStream(fin);
+            // Send file
+            int bytesSent = 0;
+            byte[] buffer = new byte[1024];
+            while (fileSize > bytesSent) {
+                int bytesRead = input.read(buffer, 0, 1024);
+                bytesSent += bytesRead;
+                out.write(buffer, 0, bytesRead);
+                out.flush();
+            }
+            input.close();
+            fin.close();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
 
     /**
      * Sends a temperature value to the server.
