@@ -1,6 +1,6 @@
-package iotserver;
+package src.iotserver;
 
-import iotclient.MessageCode;
+import src.iotclient.MessageCode;
 
 import java.io.File;
 import java.io.FileInputStream;

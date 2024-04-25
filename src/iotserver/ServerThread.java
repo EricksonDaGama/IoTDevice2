@@ -1,8 +1,8 @@
-package iotserver;
+package src.iotserver;
 
-import iohelper.FileHelper;
-import iohelper.Utils;
-import iotclient.MessageCode;
+import src.iohelper.FileHelper;
+import src.iohelper.Utils;
+import src.iotclient.MessageCode;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
