@@ -1,6 +1,5 @@
 package src.server;
 
-import src.others.Utils;
 import src.others.CodeMessage;
 
 import java.io.File;
@@ -245,7 +244,7 @@ public class ServerManager {
         devStorage.writeLock();
         try {
             if (devStorage.deviceExists(userId, devId)) {
-                System.out.println("devid:" + Utils.fullID(userId, devId));
+                System.out.println("devid:" + fullID(userId, devId));
 
                 if (devStorage.isDeviceOnline(userId, devId)) {
                     System.out.println("dev is online");
@@ -262,13 +261,17 @@ public class ServerManager {
             devStorage.writeUnlock();
         }
     }
+    public static String fullID(String userId, String devId){
+        return (userId + ":" + devId);
+    }
 
-   /** public ServerResponse attestClient(String devFileName, long devFileSize)
-            throws IOException {
-        if (devFileName.equals(clientFileName) && devFileSize==clientFileSize) {
-            return new ServerResponse(MessageCode.OK_TESTED);
-        }
 
-        return new ServerResponse(MessageCode.NOK_TESTED);
-    }*/
+    /** public ServerResponse attestClient(String devFileName, long devFileSize)
+             throws IOException {
+         if (devFileName.equals(clientFileName) && devFileSize==clientFileSize) {
+             return new ServerResponse(MessageCode.OK_TESTED);
+         }
+
+         return new ServerResponse(MessageCode.NOK_TESTED);
+     }*/
 }

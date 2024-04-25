@@ -2,7 +2,6 @@ package src.client;
 
 import src.others.FileHelper;
 import src.others.CodeMessage;
-import src.others.Utils;
 
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
@@ -141,7 +140,7 @@ public class IoTDevice {
     private static void sendAttestationHash(long nonce) {
         try {
             final int CHUNK_SIZE = 1024;
-            String clientExecPath = Utils.getAttestationPath();
+            String clientExecPath = getAttestationPath();
             long clientExecSize = new File(clientExecPath).length();
             FileInputStream clientFIS;
             System.out.println("Client Executable Path: " + clientExecPath);
@@ -170,6 +169,13 @@ public class IoTDevice {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+    }
+
+
+    public static String getAttestationPath() throws IOException{
+        BufferedReader br = new BufferedReader(new FileReader("Info_IoTDevice.txt"));
+        String path = br.readLine();
+        return path;
     }
 
     private static void twoFactorAuth(String user) {

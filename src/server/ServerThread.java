@@ -1,7 +1,6 @@
 package src.server;
 
 import src.others.FileHelper;
-import src.others.Utils;
 import src.others.CodeMessage;
 
 import java.io.IOException;
@@ -257,13 +256,17 @@ public class ServerThread extends Thread {
 
         if (sa.verifySignedNonce(signedNonce, cert, nonce) &&
                 receivedUnsignedNonce == nonce) {
-            sa.registerUser(userID, Utils.certPathFromUser(userID));
+            sa.registerUser(userID, certPathFromUser(userID));
             sa.saveCertificateInFile(userID, cert);
             out.writeObject(CodeMessage.OK);
         } else {
             out.writeObject(CodeMessage.WRONG_NONCE);
         }
     }
+    public static String certPathFromUser(String user) {
+        return "output/server/certificado/" + user + ".cert";
+    }
+
 
     private void authRegisteredUser(long nonce) throws ClassNotFoundException,
             IOException, InvalidKeyException, CertificateException,
