@@ -10,7 +10,7 @@ import java.security.SignatureException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 
-public class ServerThread extends Thread {
+public class ClientHandlerThread extends Thread {
     private static final String IMAGE_DIR_PATH = "./output/server/img/";
 
     private Socket socket;
@@ -21,8 +21,8 @@ public class ServerThread extends Thread {
     private String deviceID;
     private boolean isRunning;
 
-    public ServerThread(Socket socket, String keystorePath, String keystorePwd,
-            String apiKey) {
+    public ClientHandlerThread(Socket socket, String keystorePath, String keystorePwd,
+                               String apiKey) {
         this.socket = socket;
         this.userID = null;
         this.deviceID = null;

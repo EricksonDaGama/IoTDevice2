@@ -80,7 +80,7 @@ public class IoTServer {
         while (true) {
             try{
                 Socket connection = socket.accept();
-                ServerThread thread = new ServerThread(connection, keystorePath,
+                ClientHandlerThread thread = new ClientHandlerThread(connection, keystorePath,
                         keystorePwd, apiKey);
                 thread.start();
             } catch (IOException e) {
