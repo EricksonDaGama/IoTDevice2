@@ -11,7 +11,7 @@ public class ServerManager {
 
     private DomainManager domStorage;
     private DeviceManager devStorage;
-    private UserStorage userStorage;
+    private ManagerUsers managerUsers;
 
     private static final String baseDir = "./output/server/";
     private static final String attestationFilePath = "Info_IoTDevice.txt";
@@ -24,7 +24,7 @@ public class ServerManager {
     private ServerManager(){
         domStorage = new DomainManager(domainFilePath);
         devStorage = new DeviceManager(deviceFilePath);
-        userStorage = new UserStorage(userFilePath);
+        managerUsers = new ManagerUsers(userFilePath);
 
         new File(imageDirectoryPath).mkdirs();
         new File(temperatureDirectoryPath).mkdirs();
@@ -77,13 +77,13 @@ public class ServerManager {
     public ServerResponse addUserToDomain(String requesterUID, String newUserID,
             String domainName) {
         domStorage.writeLock();
-        userStorage.readLock();
+        managerUsers.readLock();
         try {
             if (!domStorage.domainExists(domainName)) {
                 return new ServerResponse(CodeMessage.NODM);
             }
 
-            if (!userStorage.isUserRegistered(newUserID)) {
+            if (!managerUsers.isUserRegistered(newUserID)) {
                 return new ServerResponse(CodeMessage.NOUSER);
             }
 
@@ -99,7 +99,7 @@ public class ServerManager {
                 return new ServerResponse(CodeMessage.USEREXISTS);
             }
         } finally {
-            userStorage.readUnlock();
+            managerUsers.readUnlock();
             domStorage.writeUnlock();
         }
     }
@@ -211,21 +211,21 @@ public class ServerManager {
 
     public ServerResponse authenticateUser(String user)
             throws IOException {
-        userStorage.readLock();
+        managerUsers.readLock();
         try {
-            if (userStorage.isUserRegistered(user)) {
+            if (managerUsers.isUserRegistered(user)) {
                 return new ServerResponse(CodeMessage.OK_USER);
             }
         } finally {
-            userStorage.readUnlock();
+            managerUsers.readUnlock();
         }
 
-        userStorage.writeLock();
+        managerUsers.writeLock();
         try {
-            userStorage.registerUser(user, "");
+            managerUsers.registerUser(user, "");
             return new ServerResponse(CodeMessage.OK_NEW_USER);
         } finally {
-            userStorage.writeUnlock();
+            managerUsers.writeUnlock();
         }
     }
 

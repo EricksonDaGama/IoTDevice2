@@ -18,7 +18,7 @@ public class AuthenticationService {
     private static final String USER_FILEPATH = "user.txt";
     private static String apiKey;
 
-    private UserStorage userStorage;
+    private ManagerUsers managerUsers;
 
     public static AuthenticationService getInstance() {
         AuthenticationService instance = INSTANCE;
@@ -33,33 +33,33 @@ public class AuthenticationService {
     }
 
     private AuthenticationService() {
-        userStorage = new UserStorage(USER_FILEPATH);
+        managerUsers = new ManagerUsers(USER_FILEPATH);
     }
 
     public boolean isUserRegistered(String user) {
-        userStorage.readLock();
+        managerUsers.readLock();
         try {
-            return userStorage.isUserRegistered(user);
+            return managerUsers.isUserRegistered(user);
         } finally {
-            userStorage.readUnlock();
+            managerUsers.readUnlock();
         }
     }
 
     public boolean registerUser(String user, String certPath) {
-        userStorage.writeLock();
+        managerUsers.writeLock();
         try {
-            return userStorage.registerUser(user, certPath);
+            return managerUsers.registerUser(user, certPath);
         } finally {
-            userStorage.writeUnlock();
+            managerUsers.writeUnlock();
         }
     }
 
     public String userCertPath(String user) {
-        userStorage.readLock();
+        managerUsers.readLock();
         try {
-            return userStorage.userCertPath(user);
+            return managerUsers.userCertPath(user);
         } finally {
-            userStorage.readUnlock();
+            managerUsers.readUnlock();
         }
     }
 
