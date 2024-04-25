@@ -6,8 +6,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
-public class ServerManager {
-    private static volatile ServerManager instance;
+public class ManagerSever {
+    private static volatile ManagerSever instance;
 
     private DomainManager domStorage;
     private DeviceManager devStorage;
@@ -21,7 +21,7 @@ public class ServerManager {
     private static final String imageDirectoryPath = baseDir + "img/";
     private static final String temperatureDirectoryPath = baseDir + "temp/";
 
-    private ServerManager(){
+    private ManagerSever(){
         domStorage = new DomainManager(domainFilePath);
         devStorage = new DeviceManager(deviceFilePath);
         managerUsers = new ManagerUsers(userFilePath);
@@ -42,16 +42,16 @@ public class ServerManager {
         }*/
     }
 
-    public static ServerManager getInstance(){
+    public static ManagerSever getInstance(){
         // thread calls this to get the db
-        ServerManager res = instance;
+        ManagerSever res = instance;
         if(res != null){
             return res;
         }
 
-        synchronized(ServerManager.class) {
+        synchronized(ManagerSever.class) {
             if (instance == null) {
-                instance = new ServerManager();
+                instance = new ManagerSever();
             }
             return instance;
         }

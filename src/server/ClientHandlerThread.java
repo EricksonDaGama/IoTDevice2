@@ -16,7 +16,7 @@ public class ClientHandlerThread extends Thread {
     private Socket socket;
     private ObjectOutputStream out;
     private ObjectInputStream in;
-    private ServerManager manager;
+    private ManagerSever manager;
     private String userID;
     private String deviceID;
     private boolean isRunning;
@@ -35,7 +35,7 @@ public class ClientHandlerThread extends Thread {
         try {
             out = new ObjectOutputStream(socket.getOutputStream());
             in = new ObjectInputStream(socket.getInputStream());
-            manager = ServerManager.getInstance();
+            manager = ManagerSever.getInstance();
 
             while (isRunning) {
                 CodeMessage opcode = (CodeMessage) in.readObject();

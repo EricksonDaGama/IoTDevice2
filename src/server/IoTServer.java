@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.net.Socket;
 
 public class IoTServer {
-    public static final ServerManager SERVER_MANAGER = ServerManager
+    public static final ManagerSever SERVER_MANAGER = ManagerSever
         .getInstance();
     public static final AuthenticationService SERVER_AUTH = AuthenticationService.getInstance();
 
