@@ -108,7 +108,7 @@ public class ServerThread extends Thread {
             InvalidKeyException, CertificateException, NoSuchAlgorithmException,
             SignatureException {
         System.out.println("Starting user auth.");
-        ServerAuth sa = IoTServer.SERVER_AUTH;
+        AuthenticationService sa = IoTServer.SERVER_AUTH;
         userID = (String) in.readObject();
 
         long nonce = sa.generateNonce();
@@ -155,12 +155,12 @@ public class ServerThread extends Thread {
 
     private void attestClient() throws ClassNotFoundException, IOException,
             NoSuchAlgorithmException {
-        long nonce = ServerAuth.generateNonce();
+        long nonce = AuthenticationService.generateNonce();
         out.writeLong(nonce);
         out.flush();
 
         byte[] receivedHash = (byte[]) in.readObject();
-        if (ServerAuth.verifyAttestationHash(receivedHash, nonce)) {
+        if (AuthenticationService.verifyAttestationHash(receivedHash, nonce)) {
             out.writeObject(CodeMessage.OK_TESTED);
         } else {
             manager.disconnectDevice(userID, deviceID);
@@ -306,7 +306,7 @@ public class ServerThread extends Thread {
     private void authUnregisteredUser(long nonce) throws IOException,
             ClassNotFoundException, InvalidKeyException, CertificateException,
             NoSuchAlgorithmException, SignatureException {
-        ServerAuth sa = IoTServer.SERVER_AUTH;
+        AuthenticationService sa = IoTServer.SERVER_AUTH;
 
         long receivedUnsignedNonce = in.readLong();
         byte[] signedNonce = (byte[]) in.readObject();
@@ -329,7 +329,7 @@ public class ServerThread extends Thread {
     private void authRegisteredUser(long nonce) throws ClassNotFoundException,
             IOException, InvalidKeyException, CertificateException,
             NoSuchAlgorithmException, SignatureException {
-        ServerAuth sa = IoTServer.SERVER_AUTH;
+        AuthenticationService sa = IoTServer.SERVER_AUTH;
 
         byte[] signedNonce = (byte[]) in.readObject();
         if (sa.verifySignedNonce(signedNonce, userID, nonce)) {

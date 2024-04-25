@@ -12,27 +12,27 @@ import java.security.cert.CertificateFactory;
 import java.util.Base64;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class ServerAuth {
-    private static volatile ServerAuth INSTANCE;
+public class AuthenticationService {
+    private static volatile AuthenticationService INSTANCE;
 
     private static final String USER_FILEPATH = "user.txt";
     private static String apiKey;
 
     private UserStorage userStorage;
 
-    public static ServerAuth getInstance() {
-        ServerAuth instance = INSTANCE;
+    public static AuthenticationService getInstance() {
+        AuthenticationService instance = INSTANCE;
         if (instance != null)
             return instance;
 
-        synchronized (ServerAuth.class) {
+        synchronized (AuthenticationService.class) {
             if (instance == null)
-                instance = new ServerAuth();
+                instance = new AuthenticationService();
             return instance;
         }
     }
 
-    private ServerAuth() {
+    private AuthenticationService() {
         userStorage = new UserStorage(USER_FILEPATH);
     }
 
