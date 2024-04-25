@@ -1,4 +1,4 @@
-package src.iotserver;
+package src.server;
 
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLServerSocket;

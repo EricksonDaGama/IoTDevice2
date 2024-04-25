@@ -1,4 +1,4 @@
-package src.iohelper;
+package src.others;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -49,7 +49,7 @@ public class Utils {
     }
 
     public static String certPathFromUser(String user) {
-        return "output/server/scerts/" + user + ".cert";
+        return "output/server/certificado/" + user + ".cert";
     }
 
     public static byte[] longToByteArray(long l) {
@@ -57,7 +57,7 @@ public class Utils {
     }
 
     public static String getAttestationPath() throws IOException{
-        BufferedReader br = new BufferedReader(new FileReader("attestation.txt"));
+        BufferedReader br = new BufferedReader(new FileReader("Info_IoTDevice.txt"));
         String path = br.readLine();
         return path;
     }

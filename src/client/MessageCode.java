@@ -1,4 +1,4 @@
-package src.iotclient;
+package src.client;
 
 /**
  * Represents messages to be sent between server and client.

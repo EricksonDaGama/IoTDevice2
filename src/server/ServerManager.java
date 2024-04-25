@@ -1,7 +1,7 @@
-package src.iotserver;
+package src.server;
 
-import src.iohelper.Utils;
-import src.iotclient.MessageCode;
+import src.others.Utils;
+import src.client.MessageCode;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,7 +15,7 @@ public class ServerManager {
     private UserStorage userStorage;
 
     private static final String baseDir = "./output/server/";
-    private static final String attestationFilePath = "attestation.txt";
+    private static final String attestationFilePath = "Info_IoTDevice.txt";
     private static final String domainFilePath = baseDir + "domain.txt";
     private static final String deviceFilePath = baseDir + "device.txt";
     private static final String userFilePath = baseDir + "user.txt";

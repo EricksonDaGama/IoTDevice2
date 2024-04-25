@@ -1,4 +1,4 @@
-package src.iotserver;
+package src.server;
 
 import java.util.HashSet;
 import java.util.Set;

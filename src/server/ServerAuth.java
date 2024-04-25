@@ -1,6 +1,6 @@
-package src.iotserver;
+package src.server;
 
-import src.iohelper.Utils;
+import src.others.Utils;
 
 import java.io.*;
 import java.net.HttpURLConnection;

@@ -1,7 +1,7 @@
-package src.iotclient;
+package src.client;
 
-import src.iohelper.FileHelper;
-import src.iohelper.Utils;
+import src.others.FileHelper;
+import src.others.Utils;
 
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;

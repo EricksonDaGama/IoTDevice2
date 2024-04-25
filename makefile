@@ -13,18 +13,18 @@ UserStorage \
 Utils
 
 BIN_DIR := bin
-DEVICE_DIR := src.iotclient
-SERVER_DIR := src.iotserver
+DEVICE_DIR := src.client
+SERVER_DIR := src.server
 
 DEVICE_FULL_PATHS := $(addsuffix .java,$(addprefix $(DEVICE_DIR)/,$(DEVICE_SRC))) 
 SERVER_FULL_PATHS := $(addsuffix .java,$(addprefix $(SERVER_DIR)/,$(SERVER_SRC))) 
 
 all:
 	javac -d bin $(DEVICE_FULL_PATHS) $(SERVER_FULL_PATHS)
-	jar cvfe IoTDevice.jar src.iotclient.IoTDevice -C ./bin $(DEVICE_DIR) \
--C ./bin src.iohelper/FileHelper.class
-	jar cvfe IoTServer.jar src.iotserver.IoTServer -C ./bin $(SERVER_DIR) \
--C ./bin src.iotclient/MessageCode.class -C ./bin src.iohelper/FileHelper.class
+	jar cvfe IoTDevice.jar src.client.IoTDevice -C ./bin $(DEVICE_DIR) \
+-C ./bin src.others/FileHelper.class
+	jar cvfe IoTServer.jar src.server.IoTServer -C ./bin $(SERVER_DIR) \
+-C ./bin src.client/MessageCode.class -C ./bin src.others/FileHelper.class
 	chmod +x ./attestation.sh
 	./attestation.sh
 clean:
