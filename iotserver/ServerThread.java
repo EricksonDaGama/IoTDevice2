@@ -48,8 +48,11 @@ public class ServerThread extends Thread {
                         authUser();
                         break;
                     case AD:
-                        authDevice();
+                       authDevice();
+                        //---------------------------------------
                         break;
+
+
                     case TD:
                         attestClient();
                         break;
@@ -117,11 +120,15 @@ public class ServerThread extends Thread {
 
         if (sa.isUserRegistered(userID)) {
             out.writeObject(MessageCode.OK_USER);
-            authRegisteredUser(nonce);
+            authRegisteredUser(nonce); //certificado
         } else {
             out.writeObject(MessageCode.OK_NEW_USER);
-            authUnregisteredUser(nonce);
+            authUnregisteredUser(nonce); //certificado
         }
+
+
+
+
 
         int twoFACode = sa.generate2FACode();
         int emailResponseCode = sa.send2FAEmail(userID, twoFACode);
@@ -130,6 +137,7 @@ public class ServerThread extends Thread {
             twoFACode = sa.generate2FACode();
             emailResponseCode = sa.send2FAEmail(userID, twoFACode);
         }
+
 
         int receivedTwoFACode = in.readInt();
 

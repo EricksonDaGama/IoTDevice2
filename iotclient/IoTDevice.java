@@ -63,6 +63,14 @@ public class IoTDevice {
         devid = args[4];
         userid = args[5];
 
+        System.out.println("Server Address: " + serverAddress);
+        System.out.println("Truststore: " + truststore);
+        System.out.println("Keystore: " + keystore);
+        System.out.println("Password Keystore: " + psw_keystore);
+        System.out.println("Device ID: " + devid);
+        System.out.println("User ID: " + userid);
+
+
         System.setProperty("javax.net.ssl.trustStore", truststore);
         System.setProperty("javax.net.ssl.trustStorePassword", "");
         System.setProperty("javax.net.ssl.trustStoreType", "JCEKS");
@@ -70,10 +78,14 @@ public class IoTDevice {
         System.setProperty("javax.net.ssl.keyStorePassword", psw_keystore);
         System.setProperty("javax.net.ssl.keyStoreType", "JCEKS");
 
+
         // Connection & Authentication
         if (connect(serverAddress)) {
             twoFactorAuth(userid);
-            remoteAttestation(devid);
+            remoteAttestation(devid); //
+            //--------------
+
+
             printMenu();
             // Program doesn't end until CTRL+C is pressed
             while (true) {// Steps 8 - 10
@@ -131,6 +143,7 @@ public class IoTDevice {
             String clientExecPath = Utils.getAttestationPath();
             long clientExecSize = new File(clientExecPath).length();
             FileInputStream clientFIS;
+            System.out.println("Client Executable Path: " + clientExecPath);
             clientFIS = new FileInputStream(clientExecPath);
             MessageDigest md = MessageDigest.getInstance("SHA");
 
@@ -159,7 +172,6 @@ public class IoTDevice {
     }
 
     private static void twoFactorAuth(String user) {
-
         try {
             boolean auth = false;
             do {
@@ -171,10 +183,27 @@ public class IoTDevice {
                 // Receive nonce from server
                 long nonce = in.readLong();
 
-                FileInputStream kfile = new FileInputStream(keystore);
-                KeyStore kstore = KeyStore.getInstance("JCEKS");
-                kstore.load(kfile, psw_keystore.toCharArray());
-                PrivateKey privKey = (PrivateKey) kstore.getKey(user, psw_keystore.toCharArray());
+                PrivateKey privKey;
+                KeyStore kstore = null; // Move the declaration here
+
+                try {
+                    kstore = KeyStore.getInstance("JCEKS");
+                    FileInputStream kfile = new FileInputStream(keystore);
+                    kstore.load(kfile, psw_keystore.toCharArray());
+
+                } catch (KeyStoreException e) {
+                    e.printStackTrace();
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                } catch (NoSuchAlgorithmException e) {
+                    e.printStackTrace();
+                } catch (CertificateException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                privKey = (PrivateKey) kstore.getKey(user, psw_keystore.toCharArray());
 
                 // MessageCode used as flag
                 MessageCode code = (MessageCode) in.readObject();
@@ -193,10 +222,12 @@ public class IoTDevice {
                         // Receive confirmation
                         // TODO handle receiving WRONG_NONCE
                         if (!in.readObject().equals(MessageCode.OK)) {
+                            System.out.println("enviei certificado e recebi NÃO OK");
                             System.exit(-1);
                         }
                         System.out.println(MessageCode.OK.getDesc());
                         break;
+
                     case OK_USER:
                         System.out.println(MessageCode.OK_USER.getDesc());
                         // Send nonce signed with private key
@@ -214,11 +245,11 @@ public class IoTDevice {
                         break;
                 }
 
+
                 // FACTOR 2 - Email auth
                 MessageCode emailCode;
                 do {
                     System.out.println("Check your email for an authentication code.");
-                    ;
                     System.out.print("> Code: ");
                     String c2fa = sc.nextLine();
                     out.writeInt(Integer.valueOf(c2fa));
@@ -230,10 +261,10 @@ public class IoTDevice {
                 switch (emailCode) {
                     case OK:
                         auth = true;
-                        System.out.println("Auhentication ok.");
+                        System.out.println("Authentication ok.");
                         break;
                     case NOK:
-                        System.out.println("Auhentication has failed, it'll now restart.");
+                        System.out.println("Authentication has failed, it'll now restart.");
                         break;
                     default:
                         break;
@@ -247,9 +278,6 @@ public class IoTDevice {
         } catch (KeyStoreException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        } catch (CertificateException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
         } catch (UnrecoverableKeyException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -258,9 +286,9 @@ public class IoTDevice {
 
     private static void sendSignedNonce(String user, long nonce, PrivateKey privKey) {
         try { // Send nonce signed with private key
-
             Signature signature = Signature.getInstance("MD5withRSA");
             signature.initSign(privKey);
+
             byte[] nonceBytes = ByteBuffer.allocate(8).putLong(nonce).array(); // TODO: check this
             signature.update(nonceBytes);
             byte[] signedNonce = signature.sign();
@@ -274,6 +302,10 @@ public class IoTDevice {
         }
     }
 
+    /**
+     * Adds a shutdown hook to the client that sends a stop message to the server
+     * and closes the socket.
+     */
     private static void addCliShutdownHook() {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("\nShutting down.\n");
@@ -660,6 +692,7 @@ public class IoTDevice {
      */
     private static Boolean connect(String serverAddress) {
         // Check if port was given
+
         String[] address_port = serverAddress.split(":");
         String addr = new String(address_port[0]);
         int port = address_port.length > 1 ? Integer.parseInt(address_port[1]) : DEFAULT_PORT;
