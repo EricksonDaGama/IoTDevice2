@@ -1,11 +1,16 @@
 package src.iotserver;
-
+import  src.iohelper.FileHelper;
 import src.iohelper.Utils;
 import src.iotclient.MessageCode;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class ServerManager {
     private static volatile ServerManager instance;
@@ -156,11 +161,12 @@ public class ServerManager {
         }
     }
 
-    public ServerResponse getTemperatures(String user, String domainName)
+    public ServerResponse getTemperatures(String user, String domainName,
+                                          ObjectOutputStream outStream)
             throws IOException {
         domStorage.readLock();
         devStorage.readLock();
-        try {
+
             if (!domStorage.domainExists(domainName)) {
                 return new ServerResponse(MessageCode.NODM);
             }
@@ -169,16 +175,17 @@ public class ServerManager {
                 return new ServerResponse(MessageCode.NOPERM);
             }
 
-            Map<String, Float> temps = domStorage.temperatures(domainName,
-                    devStorage);
+            //return new ServerResponse(MessageCode.NODATA);
+        return new ServerResponse(MessageCode.OK);
 
-            //XXX ServerResponse is being init with a Map?
-            return new ServerResponse(MessageCode.OK, temps);
-        } finally {
-            devStorage.readUnlock();
-            domStorage.readUnlock();
-        }
+
+
+
+
     }
+
+
+
 
     public ServerResponse getImage(String requesterUID, String targetUID,
             String targetDID) {

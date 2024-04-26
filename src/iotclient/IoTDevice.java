@@ -8,6 +8,9 @@ import javax.net.ssl.SSLSocketFactory;
 import java.io.*;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
@@ -412,31 +415,42 @@ public class IoTDevice {
             out.writeObject(domain);
             // Receive message
             MessageCode code = (MessageCode) in.readObject();
+
             switch (code) {
                 case OK:
-                    // Long fileSize = (long) in.readObject(); // Read file size
-                    @SuppressWarnings("unchecked")
-                    HashMap<String, Float> temps = (HashMap<String, Float>) in.readObject();
-                    for (@SuppressWarnings("unused")
-                    String s : temps.keySet())
-                        ;
-                    for (@SuppressWarnings("unused")
-                    Number n : temps.values())
-                        ;
-                    // reason for the empty loops: https://stackoverflow.com/a/509288
-                    // essentially ClassCastException will be thrown if any of the maps is bad
+                    long fileSize = in.readLong();
+                    byte[] fileData = new byte[(int) fileSize];
+                    in.readFully(fileData);
+                    Path path = Paths.get(domain+"_"+"received_temperature_data.txt");
+                    Files.write(path, fileData);
+                    System.out.println("OK, " + fileSize + " (long) seguido de " + fileSize + " bytes de dados.");
+                    System.out.println("Arquivo de temperatura recebido e salvo como " + path.getFileName());
 
-                    // TODO: write it to file
-                    String fileName = "temps_" + domain + ".txt";
-                    File f = new File(fileName);
-                    f.createNewFile();
-                    BufferedWriter output = new BufferedWriter(new FileWriter(f));
-                    for (Map.Entry<String, Float> entry : temps.entrySet()) {
-                        output.write(entry.getKey() + ":" + entry.getValue() + System.getProperty("line.separator"));
-                        output.flush();
-                    }
-                    // FileHelper.receiveFile(fileSize, fileName,in);
-                    System.out.println(MessageCode.OK.getDesc() + ", " + f.length() + " (long)");
+
+
+//                    // Long fileSize = (long) in.readObject(); // Read file size
+//                    @SuppressWarnings("unchecked")
+//                    HashMap<String, Float> temps = (HashMap<String, Float>) in.readObject();
+//                    for (@SuppressWarnings("unused")
+//                    String s : temps.keySet())
+//                        ;
+//                    for (@SuppressWarnings("unused")
+//                    Number n : temps.values())
+//                        ;
+//                    // reason for the empty loops: https://stackoverflow.com/a/509288
+//                    // essentially ClassCastException will be thrown if any of the maps is bad
+//
+//                    // TODO: write it to file
+//                    String fileName = "temps_" + domain + ".txt";
+//                    File f = new File(fileName);
+//                    f.createNewFile();
+//                    BufferedWriter output = new BufferedWriter(new FileWriter(f));
+//                    for (Map.Entry<String, Float> entry : temps.entrySet()) {
+//                        output.write(entry.getKey() + ":" + entry.getValue() + System.getProperty("line.separator"));
+//                        output.flush();
+//                    }
+//                    // FileHelper.receiveFile(fileSize, fileName,in);
+//                    System.out.println(MessageCode.OK.getDesc() + ", " + f.length() + " (long)");
                     break;
                 case NODATA:
                     System.out.println(MessageCode.NODATA.getDesc());

@@ -3,16 +3,20 @@ package src.iotserver;
 import src.iohelper.FileHelper;
 import src.iohelper.Utils;
 import src.iotclient.MessageCode;
-
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import src.iotserver.DomainStorage;
+import java.io.*;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class ServerThread extends Thread {
     private static final String IMAGE_DIR_PATH = "./output/server/img/";
@@ -216,14 +220,74 @@ public class ServerThread extends Thread {
 
     private void getTemperatures() throws IOException, ClassNotFoundException {
         String domain = (String) in.readObject();
-        ServerResponse sResponse = manager.getTemperatures(this.userID, domain);
-        MessageCode res = sResponse.responseCode();
-        out.writeObject(res);
-        if (res == MessageCode.OK) {
-            // FileHelper.sendFile(sResponse.filePath(),out);
-            out.writeObject(sResponse.temperatures());
-        }
+        ServerManager manager = ServerManager.getInstance();
+
+
+        ServerResponse sr= manager.getTemperatures(this.userID, domain,out);
+        MessageCode rCode = sr.responseCode();
+        out.writeObject(rCode);
+
+
+        List<String> temperatureData = collectTemperatureData(domain);
+
+        Path tempFile = createTempFileWithData(temperatureData);
+        sendFileToClient(tempFile, out);
+        //FileHelper.sendFile(tempFile.toString(), out);
+        Files.deleteIfExists(tempFile); // Limpar o arquivo temporário
+
     }
+
+    private void sendFileToClient(Path file, ObjectOutputStream outStream) throws IOException {
+        byte[] fileContent = Files.readAllBytes(file);
+        outStream.writeUTF("OK");
+        outStream.writeLong(fileContent.length);
+        outStream.write(fileContent);
+        outStream.flush();
+    }
+
+
+
+    private List<String> collectTemperatureData(String domain) throws IOException {
+        List<String> data = new ArrayList<>();
+        //Set<String> devicesInDomain = getDevicesInDomain(domain);
+        try (BufferedReader br = new BufferedReader(new FileReader("output/server/device.txt"))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] parts = line.split(":");
+                if (parts.length >= 4) {
+                    String deviceId = parts[1].trim();
+                    String temperature = parts[2].trim();
+                    DomainStorage domStorage = new DomainStorage("output/server/domain.txt");
+                    if (domStorage.isUserRegisteredInDomain(parts[0], domain)) {
+                        data.add("Device ID: " + deviceId + " - Temperature: " + temperature);
+                    }
+                }
+            }
+        }
+        return data;
+    }
+
+    private Path createTempFileWithData(List<String> data) throws IOException {
+        Path tempFile = Files.createTempFile("temperature_data", ".txt");
+        Files.write(tempFile, data, StandardOpenOption.WRITE);
+        return tempFile;
+    }
+
+
+
+
+
+//        ServerResponse sResponse = manager.getTemperatures(this.userID, domain);
+//        MessageCode res = sResponse.responseCode();
+//        out.writeObject(res);
+//        if (res == MessageCode.OK) {
+//            // FileHelper.sendFile(sResponse.filePath(),out);
+//            System.out.println("olaaaaaa");
+//            out.writeObject(sResponse.temperatures());
+//            System.out.println("olaaaaaa 2");
+//
+//        }
+
 
     private void getImage() throws IOException, ClassNotFoundException {
         String targetUser = (String) in.readObject();
