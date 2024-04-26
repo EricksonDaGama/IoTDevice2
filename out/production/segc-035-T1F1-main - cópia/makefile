@@ -1,31 +1,13 @@
-DEVICE_SRC := IoTDevice \
-MessageCode
+.PHONY: clean
 
-SERVER_SRC := Device \
-Domain \
-IoTServer \
-ServerThread \
-ServerManager \
-ServerResponse \
-DomainStorage \
-DeviceStorage \
-UserStorage \
-Utils
-
-BIN_DIR := bin
-DEVICE_DIR := src.client
-SERVER_DIR := src.server
-
-DEVICE_FULL_PATHS := $(addsuffix .java,$(addprefix $(DEVICE_DIR)/,$(DEVICE_SRC))) 
-SERVER_FULL_PATHS := $(addsuffix .java,$(addprefix $(SERVER_DIR)/,$(SERVER_SRC))) 
-
-all:
-	javac -d bin $(DEVICE_FULL_PATHS) $(SERVER_FULL_PATHS)
-	jar cvfe IoTDevice.jar src.client.IoTDevice -C ./bin $(DEVICE_DIR) \
--C ./bin src.others/FileHelper.class
-	jar cvfe IoTServer.jar src.server.IoTServer -C ./bin $(SERVER_DIR) \
--C ./bin src.client/MessageCode.class -C ./bin src.others/FileHelper.class
-	chmod +x ./attestation.sh
-	./attestation.sh
 clean:
-	rm -r bin; mkdir bin
+	@echo "Limpando arquivos .cert em /output/server/certificado..."
+	@find ./output/server/certificado -type f -name '*.cert' -exec rm {} +
+
+	@echo "Limpando arquivos .jpeg em /output/server/img..."
+	@find ./output/server/img -type f -name '*.jpeg' -exec rm {} +
+
+	@echo "Limpando conteúdo de domain.txt, device.txt e user.txt..."
+	@printf "" > ./output/server/domain.txt
+	@printf "" > ./output/server/device.txt
+	@printf "" > ./output/server/user.txt

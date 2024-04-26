@@ -17,7 +17,7 @@ import java.util.concurrent.ThreadLocalRandom;
 public class ServerAuth {
     private static volatile ServerAuth INSTANCE;
 
-    private static final String USER_FILEPATH = "user.txt";
+    private static final String USER_FILEPATH = "output/server/user.txt";
     private static String apiKey;
 
     private UserStorage userStorage;

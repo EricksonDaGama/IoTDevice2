@@ -96,7 +96,7 @@ public class Device {
             getImagePath() : "";
 
         StringBuilder sb = new StringBuilder();
-        sb.append(fullId() + SP + temperature + SP + imagePath + NL);
+        sb.append(fullId()  + temperature + SP + imagePath + NL);
         return sb.toString();
     }
 }
