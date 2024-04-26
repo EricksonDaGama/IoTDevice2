@@ -369,10 +369,6 @@ public class IoTDevice {
         }
     }
 
-    /**
-     * 
-     * @param device
-     */
     private static void receiveImage(String device) {
         try {
             out.writeObject(MessageCode.RI); // Send opcode
