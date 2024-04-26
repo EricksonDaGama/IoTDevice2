@@ -1,9 +1,9 @@
-package src.others;
+package src.iotclient;
 
 /**
  * Represents messages to be sent between server and client.
  */
-public enum CodeMessage {
+public enum MessageCode {
     WRONG_PWD("WRONG_PWD # Wrong password. Try again."),
     OK_NEW_USER("OK_NEW_USER # This user isn't registered."),
     OK_USER("OK_USER # User exists."),
@@ -38,7 +38,7 @@ public enum CodeMessage {
 
     private String desc;
 
-    CodeMessage(String desc) {
+    MessageCode(String desc) {
         this.desc = desc;
     }
 

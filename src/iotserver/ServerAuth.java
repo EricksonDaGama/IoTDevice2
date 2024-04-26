@@ -1,4 +1,6 @@
-package src.server;
+package src.iotserver;
+
+import src.iohelper.Utils;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -12,54 +14,54 @@ import java.security.cert.CertificateFactory;
 import java.util.Base64;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class AuthenticationService {
-    private static volatile AuthenticationService INSTANCE;
+public class ServerAuth {
+    private static volatile ServerAuth INSTANCE;
 
     private static final String USER_FILEPATH = "user.txt";
     private static String apiKey;
 
-    private ManagerUsers managerUsers;
+    private UserStorage userStorage;
 
-    public static AuthenticationService getInstance() {
-        AuthenticationService instance = INSTANCE;
+    public static ServerAuth getInstance() {
+        ServerAuth instance = INSTANCE;
         if (instance != null)
             return instance;
 
-        synchronized (AuthenticationService.class) {
+        synchronized (ServerAuth.class) {
             if (instance == null)
-                instance = new AuthenticationService();
+                instance = new ServerAuth();
             return instance;
         }
     }
 
-    private AuthenticationService() {
-        managerUsers = new ManagerUsers(USER_FILEPATH);
+    private ServerAuth() {
+        userStorage = new UserStorage(USER_FILEPATH);
     }
 
     public boolean isUserRegistered(String user) {
-        managerUsers.readLock();
+        userStorage.readLock();
         try {
-            return managerUsers.isUserRegistered(user);
+            return userStorage.isUserRegistered(user);
         } finally {
-            managerUsers.readUnlock();
+            userStorage.readUnlock();
         }
     }
 
     public boolean registerUser(String user, String certPath) {
-        managerUsers.writeLock();
+        userStorage.writeLock();
         try {
-            return managerUsers.registerUser(user, certPath);
+            return userStorage.registerUser(user, certPath);
         } finally {
-            managerUsers.writeUnlock();
+            userStorage.writeUnlock();
         }
     }
 
     public String userCertPath(String user) {
-        managerUsers.readLock();
+        userStorage.readLock();
         try {
-            return managerUsers.userCertPath(user);
+            return userStorage.userCertPath(user);
         } finally {
-            managerUsers.readUnlock();
+            userStorage.readUnlock();
         }
     }
 
@@ -100,7 +102,7 @@ public class AuthenticationService {
             NoSuchAlgorithmException, InvalidKeyException, SignatureException {
         Signature signature = Signature.getInstance("MD5withRSA");
         Certificate cert = null;
-        try (InputStream in = new FileInputStream(certPathFromUser(user))) {
+        try (InputStream in = new FileInputStream(Utils.certPathFromUser(user))) {
             cert = CertificateFactory.getInstance("X509")
                     .generateCertificate(in);
         }
@@ -110,15 +112,10 @@ public class AuthenticationService {
         return signature.verify(signedNonce);
     }
 
-    public static String certPathFromUser(String user) {
-        return "output/server/certificado/" + user + ".cert";
-    }
-
-
     public void saveCertificateInFile(String user, Certificate cert) {
         try {
-            initializeFile(certPathFromUser(user));
-            FileOutputStream os = new FileOutputStream(certPathFromUser(user));
+            Utils.initializeFile(Utils.certPathFromUser(user));
+            FileOutputStream os = new FileOutputStream(Utils.certPathFromUser(user));
             os.write("-----BEGIN CERTIFICATE-----\n".getBytes("US-ASCII"));
             os.write(Base64.getEncoder().encode(cert.getEncoded()));
             os.write("-----END CERTIFICATE-----\n".getBytes("US-ASCII"));
@@ -132,17 +129,6 @@ public class AuthenticationService {
         }
     }
 
-    public static File initializeFile(String filename) throws IOException {
-        File fileCreated = new File(filename);
-        if (!fileCreated.exists()) {
-            fileCreated.createNewFile();
-            System.out.println("File created: " + fileCreated.getName());
-        }
-        return fileCreated;
-    }
-
-
-
     public boolean verifySignedNonce(byte[] signedNonce, Certificate cert, long nonce)
             throws SignatureException, NoSuchAlgorithmException, InvalidKeyException {
         Signature signature = Signature.getInstance("MD5withRSA");
@@ -154,7 +140,7 @@ public class AuthenticationService {
     public static boolean verifyAttestationHash(byte[] hash, long nonce)
             throws IOException, NoSuchAlgorithmException {
         final int CHUNK_SIZE = 1024;
-        String clientExecPath = getAttestationPath();
+        String clientExecPath = Utils.getAttestationPath();
         long clientExecSize = new File(clientExecPath).length();
         FileInputStream clientExecInStream = new FileInputStream(clientExecPath);
         MessageDigest md = MessageDigest.getInstance("SHA");
@@ -166,24 +152,11 @@ public class AuthenticationService {
         }
         md.update(clientExecInStream.readNBytes(Long.valueOf(leftToRead)
                 .intValue()));
-        md.update(longToByteArray(nonce));
+        md.update(Utils.longToByteArray(nonce));
 
         clientExecInStream.close();
 
         byte[] computedHash = md.digest();
         return MessageDigest.isEqual(hash, computedHash);
     }
-
-
-
-    public static String getAttestationPath() throws IOException{
-        BufferedReader br = new BufferedReader(new FileReader("Info_IoTDevice.txt"));
-        String path = br.readLine();
-        return path;
-    }
-
-    public static byte[] longToByteArray(long l) {
-        return ByteBuffer.allocate(Long.BYTES).putLong(l).array();
-    }
-
 }

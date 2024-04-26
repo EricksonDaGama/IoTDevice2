@@ -1,4 +1,4 @@
-package src.server;
+package src.iotserver;
 
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLServerSocket;
@@ -7,9 +7,9 @@ import java.io.IOException;
 import java.net.Socket;
 
 public class IoTServer {
-    public static final ManagerSever SERVER_MANAGER = ManagerSever
+    public static final ServerManager SERVER_MANAGER = ServerManager
         .getInstance();
-    public static final AuthenticationService SERVER_AUTH = AuthenticationService.getInstance();
+    public static final ServerAuth SERVER_AUTH = ServerAuth.getInstance();
 
     private static final int ARG_NUM = 5;
     private static final int DEFAULT_PORT = 12345;
@@ -39,7 +39,7 @@ public class IoTServer {
             System.exit(-1);
         }
 
-        AuthenticationService.setApiKey(apiKeyArg);
+        ServerAuth.setApiKey(apiKeyArg);
 
         System.setProperty("javax.net.ssl.keyStore", keystorePathArg);
         System.setProperty("javax.net.ssl.keyStorePassword", keystorePwdArg);
@@ -80,7 +80,7 @@ public class IoTServer {
         while (true) {
             try{
                 Socket connection = socket.accept();
-                ClientHandlerThread thread = new ClientHandlerThread(connection, keystorePath,
+                ServerThread thread = new ServerThread(connection, keystorePath,
                         keystorePwd, apiKey);
                 thread.start();
             } catch (IOException e) {

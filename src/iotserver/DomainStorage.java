@@ -1,19 +1,20 @@
-package src.server;
+package src.iotserver;
+
+import src.iohelper.Utils;
 
 import java.io.*;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class DomainManager {
+public class DomainStorage {
     private Map<String, Domain> domains;
     private File domainsFile;
     private Lock wLock;
     private Lock rLock;
 
-    public DomainManager(String domainFilePath) {
+    public DomainStorage(String domainFilePath) {
         domainsFile = new File(domainFilePath);
         domains = new HashMap<>();
 
@@ -52,17 +53,13 @@ public class DomainManager {
     public boolean addDeviceToDomain(String userID, String devID,
             String domainName) {
         Domain domain = domains.get(domainName);
-        boolean ret = domain.registerDevice(fullID(userID, devID));
+        boolean ret = domain.registerDevice(Utils.fullID(userID, devID));
         if (ret) updateDomainsFile();
         return ret;
     }
-    public static String fullID(String userId, String devId){
-        return (userId + ":" + devId);
-    }
-
 
     public Map<String, Float> temperatures(String domainName,
-            DeviceManager devStorage) {
+            DeviceStorage devStorage) {
         //FIXME A better implementation doesn't need access to devStorage
         // This can be achieved by refactoring the domain's registered devices
         // as a Set<Device> instead of Set<String>
@@ -71,25 +68,14 @@ public class DomainManager {
         Map<String, Float> temperatures = new HashMap<>();
 
         for (String fullDevID : domain.getDevices()) {
-            String userID = userIDFromFullID(fullDevID);
-            String devID = devIDFromFullID(fullDevID);
+            String userID = Utils.userIDFromFullID(fullDevID);
+            String devID = Utils.devIDFromFullID(fullDevID);
             float devTemperature =
                 devStorage.getDeviceTemperature(userID, devID);
             temperatures.put(fullDevID, devTemperature);
         }
         return temperatures;
     }
-
-    public static String devIDFromFullID(String fullDevID) {
-        return fullDevID.split(":")[1];
-    }
-
-
-
-    public static String userIDFromFullID(String fullDevID) {
-        return fullDevID.split(":")[0];
-    }
-
 
     public boolean domainExists(String domainName) {
         return domains.containsKey(domainName);
@@ -108,7 +94,7 @@ public class DomainManager {
     public boolean isDeviceRegisteredInDomain(String userID, String devID,
             String domainName) {
         Domain domain = domains.get(domainName);
-        return domain.isDeviceRegistered(fullID(userID, devID));
+        return domain.isDeviceRegistered(Utils.fullID(userID, devID));
     }
 
     public void readLock() {
@@ -129,7 +115,7 @@ public class DomainManager {
 
     public boolean hasAccessToDevice(String user, String devUID, String devDID) {
         boolean hasAccess = false;
-        String fullID = fullID(devUID, devDID);
+        String fullID = Utils.fullID(devUID, devDID);
 
         for (Domain domain : domains.values()) {
             if (!domain.isDeviceRegistered(fullID)) continue;
@@ -168,7 +154,7 @@ public class DomainManager {
         for (int i = 0; i < lines.length; i++) {
             String line = lines[i];
             boolean isDomainLine = line.charAt(0) != TAB;
-            String[] tokens = split(line, SP);
+            String[] tokens = Utils.split(line, SP);
 
             if (isDomainLine) {
                 currentDomainName = tokens[0];
@@ -178,27 +164,9 @@ public class DomainManager {
                 String devDID = tokens[1];
                 domains
                     .get(currentDomainName)
-                    .registerDevice(fullID(devUID, devDID));
+                    .registerDevice(Utils.fullID(devUID, devDID));
             }
         }
-    }
-
-    static public String[] split(String str, char sep) {
-        int occurrences = 1;
-        ArrayList<String> blocks = new ArrayList<>();
-
-        int i = 0;
-        int j = str.indexOf(sep) != -1 ? str.indexOf(sep) : str.length();
-        blocks.add(str.substring(i, j).trim());
-
-        while (j != str.length()) {
-            i = j + 1;
-            j = str.indexOf(sep, i) != -1 ? str.indexOf(sep, i) : str.length();
-            blocks.add(str.substring(i, j).trim());
-            occurrences++;
-        }
-
-        return blocks.toArray(new String[occurrences]);
     }
 
     private void initDomainFromLine(String[] tokens) {

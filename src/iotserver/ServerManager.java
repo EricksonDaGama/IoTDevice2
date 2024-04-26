@@ -1,30 +1,31 @@
-package src.server;
+package src.iotserver;
 
-import src.others.CodeMessage;
+import src.iohelper.Utils;
+import src.iotclient.MessageCode;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
-public class ManagerSever {
-    private static volatile ManagerSever instance;
+public class ServerManager {
+    private static volatile ServerManager instance;
 
-    private DomainManager domStorage;
-    private DeviceManager devStorage;
-    private ManagerUsers managerUsers;
+    private DomainStorage domStorage;
+    private DeviceStorage devStorage;
+    private UserStorage userStorage;
 
     private static final String baseDir = "./output/server/";
-    private static final String attestationFilePath = "Info_IoTDevice.txt";
+    private static final String attestationFilePath = "atestacaoRemota.txt";
     private static final String domainFilePath = baseDir + "domain.txt";
     private static final String deviceFilePath = baseDir + "device.txt";
     private static final String userFilePath = baseDir + "user.txt";
     private static final String imageDirectoryPath = baseDir + "img/";
     private static final String temperatureDirectoryPath = baseDir + "temp/";
 
-    private ManagerSever(){
-        domStorage = new DomainManager(domainFilePath);
-        devStorage = new DeviceManager(deviceFilePath);
-        managerUsers = new ManagerUsers(userFilePath);
+    private ServerManager(){
+        domStorage = new DomainStorage(domainFilePath);
+        devStorage = new DeviceStorage(deviceFilePath);
+        userStorage = new UserStorage(userFilePath);
 
         new File(imageDirectoryPath).mkdirs();
         new File(temperatureDirectoryPath).mkdirs();
@@ -42,16 +43,16 @@ public class ManagerSever {
         }*/
     }
 
-    public static ManagerSever getInstance(){
+    public static ServerManager getInstance(){
         // thread calls this to get the db
-        ManagerSever res = instance;
+        ServerManager res = instance;
         if(res != null){
             return res;
         }
 
-        synchronized(ManagerSever.class) {
+        synchronized(ServerManager.class) {
             if (instance == null) {
-                instance = new ManagerSever();
+                instance = new ServerManager();
             }
             return instance;
         }
@@ -64,11 +65,11 @@ public class ManagerSever {
         domStorage.writeLock();
         try {
             if (domStorage.domainExists(domainName)) {
-                return new ServerResponse(CodeMessage.NOK);
+                return new ServerResponse(MessageCode.NOK);
             }
 
             domStorage.addDomain(domainName, ownerUID);
-            return new ServerResponse(CodeMessage.OK);
+            return new ServerResponse(MessageCode.OK);
         } finally {
             domStorage.writeUnlock();
         }
@@ -77,29 +78,29 @@ public class ManagerSever {
     public ServerResponse addUserToDomain(String requesterUID, String newUserID,
             String domainName) {
         domStorage.writeLock();
-        managerUsers.readLock();
+        userStorage.readLock();
         try {
             if (!domStorage.domainExists(domainName)) {
-                return new ServerResponse(CodeMessage.NODM);
+                return new ServerResponse(MessageCode.NODM);
             }
 
-            if (!managerUsers.isUserRegistered(newUserID)) {
-                return new ServerResponse(CodeMessage.NOUSER);
+            if (!userStorage.isUserRegistered(newUserID)) {
+                return new ServerResponse(MessageCode.NOUSER);
             }
 
             if (!domStorage.isOwnerOfDomain(requesterUID, domainName)) {
-                return new ServerResponse(CodeMessage.NOPERM);
+                return new ServerResponse(MessageCode.NOPERM);
             }
 
             boolean ret = domStorage
                 .addUserToDomain(requesterUID, newUserID, domainName);
             if (ret) {
-                return new ServerResponse(CodeMessage.OK);
+                return new ServerResponse(MessageCode.OK);
             } else {
-                return new ServerResponse(CodeMessage.USEREXISTS);
+                return new ServerResponse(MessageCode.USEREXISTS);
             }
         } finally {
-            managerUsers.readUnlock();
+            userStorage.readUnlock();
             domStorage.writeUnlock();
         }
     }
@@ -111,21 +112,21 @@ public class ManagerSever {
         devStorage.writeLock();
         try {
             if (!domStorage.domainExists(domainName)) {
-                return new ServerResponse(CodeMessage.NODM);
+                return new ServerResponse(MessageCode.NODM);
             }
 
             if (!domStorage.isUserRegisteredInDomain(userId, domainName)) {
-                return new ServerResponse(CodeMessage.NOPERM);
+                return new ServerResponse(MessageCode.NOPERM);
             }
 
             if (domStorage.isDeviceRegisteredInDomain(userId, devId,
                     domainName)) {
-                return new ServerResponse(CodeMessage.DEVICEEXISTS);
+                return new ServerResponse(MessageCode.DEVICEEXISTS);
             }
 
             domStorage.addDeviceToDomain(userId, devId, domainName);
             devStorage.addDomainToDevice(userId, devId, domainName);
-            return new ServerResponse(CodeMessage.OK);
+            return new ServerResponse(MessageCode.OK);
         } finally {
             devStorage.writeUnlock();
             domStorage.writeUnlock();
@@ -138,7 +139,7 @@ public class ManagerSever {
         devStorage.writeLock();
         try {
             devStorage.saveDeviceTemperature(userId, devId, temperature);
-            return new ServerResponse(CodeMessage.OK);
+            return new ServerResponse(MessageCode.OK);
         } finally {
             devStorage.writeUnlock();
         }
@@ -149,7 +150,7 @@ public class ManagerSever {
         devStorage.writeLock();
         try {
             devStorage.saveDeviceImage(userId, devId, filename);
-            return new ServerResponse(CodeMessage.OK);
+            return new ServerResponse(MessageCode.OK);
         } finally {
             devStorage.writeUnlock();
         }
@@ -161,18 +162,18 @@ public class ManagerSever {
         devStorage.readLock();
         try {
             if (!domStorage.domainExists(domainName)) {
-                return new ServerResponse(CodeMessage.NODM);
+                return new ServerResponse(MessageCode.NODM);
             }
 
             if (!domStorage.isUserRegisteredInDomain(user, domainName)) {
-                return new ServerResponse(CodeMessage.NOPERM);
+                return new ServerResponse(MessageCode.NOPERM);
             }
 
             Map<String, Float> temps = domStorage.temperatures(domainName,
                     devStorage);
 
             //XXX ServerResponse is being init with a Map?
-            return new ServerResponse(CodeMessage.OK, temps);
+            return new ServerResponse(MessageCode.OK, temps);
         } finally {
             devStorage.readUnlock();
             domStorage.readUnlock();
@@ -185,20 +186,20 @@ public class ManagerSever {
         devStorage.readLock();
         try {
             if (!devStorage.deviceExists(targetUID, targetDID)) {
-                return new ServerResponse(CodeMessage.NOID);
+                return new ServerResponse(MessageCode.NOID);
             }
 
             String filepath = devStorage.getDeviceImage(targetUID, targetDID);
             if (filepath == null) {
-                return new ServerResponse(CodeMessage.NODATA);
+                return new ServerResponse(MessageCode.NODATA);
             }
 
             if (domStorage.hasAccessToDevice(requesterUID, targetUID,
                     targetDID)) {
-                return new ServerResponse(CodeMessage.OK, filepath);
+                return new ServerResponse(MessageCode.OK, filepath);
             }
 
-            return new ServerResponse(CodeMessage.NOPERM);
+            return new ServerResponse(MessageCode.NOPERM);
         } finally {
             devStorage.readUnlock();
             domStorage.readUnlock();
@@ -211,21 +212,21 @@ public class ManagerSever {
 
     public ServerResponse authenticateUser(String user)
             throws IOException {
-        managerUsers.readLock();
+        userStorage.readLock();
         try {
-            if (managerUsers.isUserRegistered(user)) {
-                return new ServerResponse(CodeMessage.OK_USER);
+            if (userStorage.isUserRegistered(user)) {
+                return new ServerResponse(MessageCode.OK_USER);
             }
         } finally {
-            managerUsers.readUnlock();
+            userStorage.readUnlock();
         }
 
-        managerUsers.writeLock();
+        userStorage.writeLock();
         try {
-            managerUsers.registerUser(user, "");
-            return new ServerResponse(CodeMessage.OK_NEW_USER);
+            userStorage.registerUser(user, "");
+            return new ServerResponse(MessageCode.OK_NEW_USER);
         } finally {
-            managerUsers.writeUnlock();
+            userStorage.writeUnlock();
         }
     }
 
@@ -244,34 +245,30 @@ public class ManagerSever {
         devStorage.writeLock();
         try {
             if (devStorage.deviceExists(userId, devId)) {
-                System.out.println("devid:" + fullID(userId, devId));
+                System.out.println("devid:" + Utils.fullID(userId, devId));
 
                 if (devStorage.isDeviceOnline(userId, devId)) {
                     System.out.println("dev is online");
-                    return new ServerResponse(CodeMessage.NOK_DEVID);
+                    return new ServerResponse(MessageCode.NOK_DEVID);
                 } else {
                     devStorage.activateDevice(userId, devId);
-                    return new ServerResponse(CodeMessage.OK_DEVID);
+                    return new ServerResponse(MessageCode.OK_DEVID);
                 }
             }
 
             devStorage.addDevice(userId, devId);
-            return new ServerResponse(CodeMessage.OK_DEVID);
+            return new ServerResponse(MessageCode.OK_DEVID);
         } finally {
             devStorage.writeUnlock();
         }
     }
-    public static String fullID(String userId, String devId){
-        return (userId + ":" + devId);
-    }
 
+   /** public ServerResponse attestClient(String devFileName, long devFileSize)
+            throws IOException {
+        if (devFileName.equals(clientFileName) && devFileSize==clientFileSize) {
+            return new ServerResponse(MessageCode.OK_TESTED);
+        }
 
-    /** public ServerResponse attestClient(String devFileName, long devFileSize)
-             throws IOException {
-         if (devFileName.equals(clientFileName) && devFileSize==clientFileSize) {
-             return new ServerResponse(MessageCode.OK_TESTED);
-         }
-
-         return new ServerResponse(MessageCode.NOK_TESTED);
-     }*/
+        return new ServerResponse(MessageCode.NOK_TESTED);
+    }*/
 }
